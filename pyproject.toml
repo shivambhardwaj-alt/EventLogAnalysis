@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "event-funnel-analytics"
+version = "2.0.0"
+description = "Event logs -> clean -> sessions -> funnel metrics -> AI explanation of the largest drop"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = []            # standard library only: sqlite3, tomllib, urllib, csv, json
+
+[project.optional-dependencies]
+dev = ["pytest>=7"]
+
+[project.scripts]
+funnel = "funnel.cli:main"
+
+[tool.setuptools]
+packages = ["funnel", "funnel.ai"]
+
+[tool.setuptools.package-data]
+funnel = ["sql/*.sql", "web/*.html"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

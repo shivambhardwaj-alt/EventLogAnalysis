@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Funnel Dashboard</title>
+<style>
+:root{--bg:#f6f5f1;--card:#fff;--ink:#1d1f23;--mute:#6b6f76;--line:#e4e2dc;--bar:#3d6b8f;--ghost:#cfdbe5;--hot:#c4462c;
+--good:#2f7d4f;--warn:#a86a12;--soft:#eef2f5}
+@media (prefers-color-scheme:dark){:root{--bg:#15171a;--card:#1d2024;--ink:#e8e6e1;--mute:#9a9ea5;--line:#2e3237;
+--bar:#6c9cc2;--ghost:#33414d;--hot:#e2694f;--good:#5cb383;--warn:#e0a54a;--soft:#252a30}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+.wrap{max-width:1180px;margin:0 auto;padding:22px 16px 60px}
+header{display:flex;flex-wrap:wrap;align-items:baseline;gap:10px 16px;justify-content:space-between}
+h1{font-size:22px;margin:0;letter-spacing:-.01em}h2{font-size:15px;margin:0 0 10px}
+a{color:var(--bar)}
+.sub{color:var(--mute);font-size:13px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px 18px;margin-top:14px;overflow-x:auto}
+.filters{display:flex;flex-wrap:wrap;gap:10px;align-items:end}
+.filters label{display:flex;flex-direction:column;font-size:12px;color:var(--mute);gap:3px}
+select,input,button{font:inherit;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:6px;padding:6px 8px;min-width:120px}
+button{cursor:pointer;min-width:0}button:hover{border-color:var(--mute)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:14px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px 14px}
+.kv{font-size:22px;font-weight:650;font-variant-numeric:tabular-nums}.kl{color:var(--mute);font-size:12px}
+.kd{font-size:12px;font-variant-numeric:tabular-nums}.up{color:var(--good)}.down{color:var(--hot)}
+.grid2{display:grid;grid-template-columns:1.25fr 1fr;gap:14px}.grid2>.card{margin-top:14px}
+.frow{display:grid;grid-template-columns:150px 1fr 150px;gap:10px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)}
+.frow:last-child{border:0}.fname{font-weight:550}
+.track{position:relative;height:24px;background:var(--soft);border-radius:4px}
+.ghost{position:absolute;inset:0 auto 0 0;background:var(--ghost);border-radius:4px}
+.fill{position:absolute;inset:6px auto 6px 0;background:var(--bar);border-radius:3px}.fill.hot{background:var(--hot)}
+.fnum{text-align:right;font-variant-numeric:tabular-nums}.fnum small{display:block;color:var(--mute);font-size:11.5px}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--mute);margin-top:8px}.sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+table{border-collapse:collapse;width:100%;font-size:13px}th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--mute);font-weight:550;font-size:11.5px;text-transform:uppercase;letter-spacing:.04em}td.r,th.r{text-align:right;font-variant-numeric:tabular-nums}
+.pill{display:inline-block;padding:1px 8px;border-radius:99px;font-size:11.5px;font-weight:600;border:1px solid var(--line);white-space:nowrap}
+.pill.critical,.pill.failed{color:var(--hot);border-color:var(--hot)}.pill.warning{color:var(--warn);border-color:var(--warn)}
+.pill.success,.pill.ok{color:var(--good);border-color:var(--good)}.pill.info,.pill.no_new_data{color:var(--mute)}
+.mbar{display:inline-block;height:8px;background:var(--bar);border-radius:2px;vertical-align:middle}.mbar.hot{background:var(--hot)}
+pre{white-space:pre-wrap;font:13.5px/1.6 inherit;font-family:inherit;margin:0;background:var(--soft);padding:12px 14px;border-radius:8px}
+.chart text{fill:var(--mute);font-size:11px}.chart .gl{stroke:var(--line)}.chart .ln{fill:none;stroke:var(--bar);stroke-width:2}
+.chart .pt{fill:var(--bar)}.chart .pt.hot{fill:var(--hot)}
+.err{color:var(--hot);font-size:13px;margin-top:6px}
+.tl{font-size:12.5px}.tl td{padding:4px 8px}.sess td{background:var(--soft);font-weight:600}
+code{font:12px ui-monospace,SFMono-Regular,Menlo,monospace}
+.empty{color:var(--mute);font-size:13px}
+@media (max-width:820px){.grid2{grid-template-columns:1fr}.frow{grid-template-columns:110px 1fr 110px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div><h1>Checkout funnel - live dashboard</h1>
+  <div class="sub" id="lastrun">loading...</div></div>
+  <div class="sub"><a href="/report" target="_blank">static report</a> · <a href="/api/health" target="_blank">API</a></div>
+</header>
+
+<div class="card">
+  <div class="filters" id="filters">
+    <label>Device<select data-f="device"></select></label>
+    <label>App version<select data-f="app_version"></select></label>
+    <label>Channel<select data-f="channel"></select></label>
+    <label>Country<select data-f="country"></select></label>
+    <label>From<select data-f="date_from"></select></label>
+    <label>To<select data-f="date_to"></select></label>
+    <button id="reset" type="button">Reset</button>
+  </div>
+</div>
+
+<div class="kpis" id="kpis"></div>
+
+<div class="grid2">
+  <div class="card"><h2>Funnel for the current filter</h2><div id="funnel"></div>
+    <div class="legend"><span><span class="sw" style="background:var(--bar)"></span>filtered</span>
+    <span><span class="sw" style="background:var(--ghost)"></span>all traffic (share of entries)</span>
+    <span><span class="sw" style="background:var(--hot)"></span>largest drop</span></div></div>
+  <div class="card"><h2>Daily conversion into <select id="trendStep" style="min-width:0;padding:2px 6px"></select></h2>
+    <div id="trend"></div><div class="sub">All traffic. Red points = anomaly (significant and material drop vs. earlier healthy days)</div></div>
+</div>
+
+<div class="grid2">
+  <div class="card"><h2>Why the biggest drop? <span id="expBadge"></span></h2><pre id="explain">...</pre></div>
+  <div class="card"><h2>Where the drop concentrates</h2><div id="segments"></div></div>
+</div>
+
+<div class="card"><h2>Alerts</h2><div id="alerts"></div></div>
+
+<div class="grid2">
+  <div class="card"><h2>Pipeline runs</h2><div id="runs"></div></div>
+  <div class="card"><h2>Latest run - task timings</h2><div id="tasks"></div></div>
+</div>
+
+<div class="card"><h2>User lookup (support / debugging)</h2>
+  <div class="filters"><label>User id<input id="uid" placeholder="u_00042" value="u_00042"></label><button id="uidGo" type="button">Show sessions</button></div>
+  <div id="uidErr" class="err"></div><div id="user"></div></div>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const pct = (x, d = 1) => x == null ? "–" : (x * 100).toFixed(d) + "%";
+const num = (x) => x == null ? "–" : Number(x).toLocaleString();
+async function api(path) {
+  const r = await fetch(path);
+  const body = await r.json();
+  if (!r.ok) throw new Error(body.error || r.statusText);
+  return body;
+}
+const state = {};
+let baseline = null, worstStep = null;
+
+async function init() {
+  try {
+    const [dims, health, all, exp] = await Promise.all([api("/api/dimensions"), api("/api/health"),
+                                                       api("/api/funnel"), api("/api/explanation")]);
+    const lr = health.last_run;
+    $("lastrun").innerHTML = lr ? `last run <code>${esc(lr.run_id)}</code> <span class="pill ${esc(lr.status)}">${esc(lr.status)}</span> ${esc(lr.finished_at || "")}` : "no runs yet";
+    baseline = all;
+    worstStep = exp.largest_drop ? exp.largest_drop.step_index : null;
+    for (const sel of document.querySelectorAll("select[data-f]")) {
+      const f = sel.dataset.f;
+      const vals = f.startsWith("date") ? dateList(dims.date_range) : dims[f] || [];
+      sel.innerHTML = `<option value="">${f.startsWith("date") ? "any" : "all"}</option>` +
+        vals.map(v => `<option>${esc(v)}</option>`).join("");
+      sel.addEventListener("change", () => { state[f] = sel.value; refresh(); });
+    }
+    $("reset").onclick = () => { document.querySelectorAll("select[data-f]").forEach(s => s.value = ""); for (const k in state) delete state[k]; refresh(); };
+    $("trendStep").innerHTML = all.steps.filter(s => s.step_index > 1).map(s =>
+      `<option value="${s.step_index}" ${s.step_index === worstStep ? "selected" : ""}>${esc(s.step_name)}</option>`).join("");
+    $("trendStep").onchange = loadTrend;
+    renderExplanation(exp);
+    await Promise.all([refresh(), loadTrend(), loadSegments(), loadAlerts(), loadRuns(), loadUser()]);
+  } catch (e) {
+    document.querySelector(".wrap").insertAdjacentHTML("afterbegin", `<div class="card err">${esc(e.message)}</div>`);
+  }
+  $("uidGo").onclick = loadUser;
+  $("uid").addEventListener("keydown", e => { if (e.key === "Enter") loadUser(); });
+}
+
+function dateList(range) {
+  if (!range || !range[0]) return [];
+  const out = []; let d = new Date(range[0] + "T00:00:00Z"); const end = new Date(range[1] + "T00:00:00Z");
+  while (d <= end) { out.push(d.toISOString().slice(0, 10)); d = new Date(d.getTime() + 86400000); }
+  return out;
+}
+
+async function refresh() {
+  const qs = new URLSearchParams(Object.entries(state).filter(([, v]) => v)).toString();
+  const f = await api("/api/funnel" + (qs ? "?" + qs : ""));
+  const steps = f.steps, entries = steps[0]?.sessions_reached || 0, last = steps[steps.length - 1];
+  const allLast = baseline.steps[baseline.steps.length - 1];
+  const conv = last?.overall_conversion, allConv = allLast?.overall_conversion;
+  const delta = conv != null && allConv != null ? (conv - allConv) * 100 : null;
+  $("kpis").innerHTML = [
+    ["Sessions in filter", num(f.sessions_in_filter)],
+    ["Funnel entries", num(entries)],
+    ["Purchases", num(last?.sessions_reached)],
+    ["End-to-end conversion", pct(conv), delta == null || !qs ? "" :
+      `<span class="kd ${delta >= 0 ? "up" : "down"}">${delta >= 0 ? "+" : ""}${delta.toFixed(1)} pts vs all</span>`],
+  ].map(([l, v, d]) => `<div class="kpi"><div class="kv">${v}</div><div class="kl">${esc(l)} ${d || ""}</div></div>`).join("");
+
+  let worst = null;
+  for (const s of steps) if (s.step_index > 1 && s.prev_sessions >= 10 && (!worst || s.step_conversion < worst.step_conversion)) worst = s;
+  $("funnel").innerHTML = steps.map((s, i) => {
+    const share = entries ? s.sessions_reached / entries : 0;
+    const allShare = baseline.steps[i].overall_conversion || 0;
+    const hot = worst && s.step_index === worst.step_index;
+    return `<div class="frow"><div class="fname">${esc(s.step_name)}</div>
+      <div class="track" title="all traffic: ${pct(allShare)} of entries"><div class="ghost" style="width:${allShare * 100}%"></div>
+      <div class="fill ${hot ? "hot" : ""}" style="width:${share * 100}%"></div></div>
+      <div class="fnum">${num(s.sessions_reached)}<small>${s.step_index === 1 ? "entries" : pct(s.step_conversion) + " from previous"}</small></div></div>`;
+  }).join("");
+}
+
+async function loadTrend() {
+  const step = Number($("trendStep").value);
+  const [d, a] = await Promise.all([api("/api/daily"), api("/api/anomalies")]);
+  const pts = d.rows.filter(r => r.step_index === step && r.step_conversion != null);
+  const bad = new Set(a.rows.filter(r => r.step_index === step).map(r => r.session_date));
+  if (!pts.length) { $("trend").innerHTML = `<div class="empty">No data</div>`; return; }
+  const W = 520, H = 210, L = 40, R = 24, T = 10, B = 26;
+  const xs = (i) => L + (pts.length === 1 ? (W - L - R) / 2 : i * (W - L - R) / (pts.length - 1));
+  const ys = (v) => T + (1 - v) * (H - T - B);
+  const grid = [0, .25, .5, .75, 1].map(v => `<line class="gl" x1="${L}" x2="${W - R}" y1="${ys(v)}" y2="${ys(v)}"/><text x="${L - 6}" y="${ys(v) + 4}" text-anchor="end">${v * 100}%</text>`).join("");
+  const path = pts.map((p, i) => `${i ? "L" : "M"}${xs(i).toFixed(1)},${ys(p.step_conversion).toFixed(1)}`).join("");
+  const dots = pts.map((p, i) => `<circle class="pt ${bad.has(p.session_date) ? "hot" : ""}" cx="${xs(i)}" cy="${ys(p.step_conversion)}" r="${bad.has(p.session_date) ? 5 : 3.5}"><title>${esc(p.session_date)}: ${pct(p.step_conversion)} of ${num(p.prev_sessions)} sessions</title></circle>`).join("");
+  const labels = pts.map((p, i) => `<text x="${xs(i)}" y="${H - 8}" text-anchor="middle">${esc(p.session_date.slice(5))}</text>`).join("");
+  $("trend").innerHTML = `<svg class="chart" viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="daily conversion">${grid}<path class="ln" d="${path}"/>${dots}${labels}</svg>`;
+}
+
+function renderExplanation(exp) {
+  const e = exp.explanation;
+  $("explain").textContent = e ? e.text : "No explanation yet.";
+  $("expBadge").innerHTML = e ? `<span class="pill ${e.ai_generated ? "ok" : "info"}">${e.ai_generated ? "AI" : "rule-based"} · ${esc(e.provider)} · ${esc(e.status)}</span>` : "";
+}
+
+async function loadSegments() {
+  const s = await api("/api/segments" + (worstStep ? "?step=" + worstStep : ""));
+  const byDim = {};
+  for (const r of s.rows) (byDim[r.dimension] ||= []).push(r);
+  const overall = baseline.steps.find(x => x.step_index === s.step_index)?.step_conversion || 0;
+  let html = `<table><tr><th>Segment</th><th class="r">Sessions</th><th>Continue rate</th></tr>`;
+  for (const [dim, rows] of Object.entries(byDim)) {
+    for (const r of rows.filter(r => r.prev_sessions >= 50).slice(0, 6)) {
+      const low = r.step_conversion != null && r.step_conversion < overall - 0.1;
+      html += `<tr><td>${esc(dim)} = <b>${esc(r.segment_value)}</b></td><td class="r">${num(r.prev_sessions)}</td>
+        <td><span class="mbar ${low ? "hot" : ""}" style="width:${(r.step_conversion || 0) * 120}px"></span> ${pct(r.step_conversion)}</td></tr>`;
+    }
+  }
+  $("segments").innerHTML = html + `</table><div class="sub">Overall continue rate at this step: ${pct(overall)}. Red = more than 10 points below. Segments under 50 sessions hidden.</div>`;
+}
+
+async function loadAlerts() {
+  const a = await api("/api/alerts");
+  $("alerts").innerHTML = a.rows.length ? `<table><tr><th>Severity</th><th>Kind</th><th>Message</th><th>Raised</th></tr>` +
+    a.rows.map(r => `<tr><td><span class="pill ${esc(r.severity)}">${esc(r.severity)}</span></td><td><code>${esc(r.kind)}</code></td>
+    <td>${esc(r.message)}</td><td class="sub">${esc(r.created_at)}</td></tr>`).join("") + `</table>` : `<div class="empty">No alerts</div>`;
+}
+
+async function loadRuns() {
+  const r = await api("/api/runs");
+  $("runs").innerHTML = `<table><tr><th>Run</th><th>Mode</th><th>Status</th><th class="r">Rows</th><th class="r">Quarantined</th></tr>` +
+    r.runs.slice(0, 10).map(x => `<tr><td><code>${esc(x.run_id.slice(4, 20))}</code></td><td>${esc(x.mode)}</td>
+    <td><span class="pill ${esc(x.status)}">${esc(x.status)}</span></td><td class="r">${num(x.rows_processed)}</td><td class="r">${num(x.rows_quarantined)}</td></tr>`).join("") + `</table>`;
+  const max = Math.max(1, ...r.latest_tasks.map(t => t.duration_ms));
+  $("tasks").innerHTML = r.latest_tasks.length ? `<table>` + r.latest_tasks.map(t => `<tr><td><code>${esc(t.task)}</code></td>
+    <td><span class="mbar" style="width:${Math.max(2, t.duration_ms / max * 160)}px"></span></td><td class="r">${num(Math.round(t.duration_ms))} ms</td></tr>`).join("") + `</table>` : `<div class="empty">No tasks recorded</div>`;
+}
+
+async function loadUser() {
+  const id = $("uid").value.trim();
+  $("uidErr").textContent = "";
+  if (!id) { $("uidErr").textContent = "Enter a user id first"; $("user").innerHTML = ""; return; }
+  try {
+    const u = await api("/api/users/" + encodeURIComponent(id));
+    const reached = {};
+    for (const s of u.funnel_steps) reached[s.session_id] = s.step_name;
+    let html = `<table class="tl"><tr><th>Time (UTC)</th><th>Event</th><th>Device / version</th><th class="r">Price</th></tr>`;
+    for (const s of u.sessions) {
+      html += `<tr class="sess"><td colspan="4">Session ${s.session_seq} · ${esc(s.session_start.slice(0, 16).replace("T", " "))} · ${num(s.event_count)} events · ${Math.round(s.duration_seconds / 60)} min · furthest funnel step: ${esc(reached[s.session_id] || "none")}</td></tr>`;
+      for (const e of u.events.filter(e => e.session_id === s.session_id))
+        html += `<tr><td>${esc(e.event_ts.slice(11, 19))}</td><td>${esc(e.event_name)}</td><td>${esc(e.device)} / ${esc(e.app_version)}</td><td class="r">${e.price == null ? "" : num(e.price)}</td></tr>`;
+    }
+    const dbl = u.events.filter(e => e.is_near_duplicate).length;
+    $("user").innerHTML = html + `</table>` + (dbl ? `<div class="sub">${dbl} double-click event(s) excluded from sessions.</div>` : "");
+  } catch (e) { $("uidErr").textContent = e.message; $("user").innerHTML = ""; }
+}
+
+init();
+</script>
+</body>
+</html>

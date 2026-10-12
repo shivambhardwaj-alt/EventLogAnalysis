@@ -1,0 +1,47 @@
+# Pipeline configuration. No secrets here - those live in .env (see .env.example).
+# Paths are relative to the project root.
+
+[paths]
+incoming_dir = "data/incoming"        # drop new .jsonl / .ndjson / .csv files here
+warehouse    = "output/warehouse.db"  # SQLite warehouse (bronze/silver/gold tables)
+output_dir   = "output"               # report.html, report.json, exports/
+
+[sessionization]
+inactivity_gap_minutes = 30           # gap > 30 min starts a new session (exactly 30:00 does not)
+
+[dedup]
+near_duplicate_window_seconds = 2.0   # same user+event+product within 2s = double click
+
+[validation]
+min_event_date           = "2020-01-01"  # older timestamps are quarantined
+future_tolerance_minutes = 10            # allowed client clock skew vs. ingestion time
+allowed_events = [
+  "app_open", "page_view", "search", "view_product", "add_to_cart",
+  "remove_from_cart", "begin_checkout", "add_payment_info", "purchase", "logout",
+]
+
+[contract]
+# The agreed event schema. Any other field is reported as schema drift (and alerted on).
+fields            = ["event_id", "user_id", "event_name", "ts", "device", "country", "channel", "app_version", "properties"]
+property_fields   = ["product_id", "price"]
+
+[funnel]
+name  = "checkout"
+steps = ["view_product", "add_to_cart", "begin_checkout", "add_payment_info", "purchase"]
+min_sample_size    = 30                       # ignore steps/segments with fewer sessions
+segment_dimensions = ["device", "channel", "country", "app_version"]
+
+[anomaly]
+# A day's step conversion is compared with all earlier days pooled (two-proportion z-test).
+min_daily_sessions   = 50      # skip days with fewer sessions at the previous step
+max_p_value          = 0.001   # statistical bar
+min_relative_decline = 0.15    # and the drop must matter: at least 15% worse than baseline
+
+[alerts]
+max_quarantine_rate       = 0.05   # alert if more than 5% of a run's rows are rejected
+max_conflicting_duplicates = 100   # alert if a run sees more same-id-different-content rows
+# Delivery: always printed + stored in the `alerts` table. Set ALERT_WEBHOOK_URL in .env
+# (Slack / Discord / Teams incoming webhook) to also push them.
+
+[runtime]
+lock_timeout_minutes = 120   # a lock older than this is considered stale (crashed run)
