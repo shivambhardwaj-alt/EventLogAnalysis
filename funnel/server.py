@@ -11,7 +11,7 @@ from typing import Any, Callable
 from urllib.parse import parse_qs, unquote, urlparse
 
 from .config import SEGMENT_COLUMNS, Config
-from .db import sql_blocks
+from .db import read_sql, split_statements
 
 log = logging.getLogger(__name__)
 WEB_DIR = Path(__file__).parent / "web"
@@ -29,7 +29,8 @@ class Api:
 
     def __init__(self, cfg: Config) -> None:
         self.cfg = cfg
-        self.queries = sql_blocks("12_api_queries.sql")
+        queries = split_statements(read_sql("12_api_queries.sql"))
+        self.queries = {"filtered_funnel": queries[0], "user_timeline": queries[1]}
 
     def _con(self) -> sqlite3.Connection:
         if not self.cfg.warehouse_path.exists():

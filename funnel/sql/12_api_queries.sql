@@ -1,4 +1,3 @@
-
 WITH s AS (
     SELECT session_id
     FROM sessions
@@ -29,7 +28,6 @@ SELECT step_index, step_name, n AS sessions_reached, prev_n AS prev_sessions,
        (SELECT COUNT(*) FROM s) AS sessions_in_filter
 FROM b
 ORDER BY step_index;
-
 
 SELECT c.session_id, c.event_ts, c.event_name, c.device, c.app_version, c.product_id, c.price,
        c.is_near_duplicate

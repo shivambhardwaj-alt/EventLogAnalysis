@@ -56,7 +56,6 @@ def segment_findings(con: sqlite3.Connection, cfg: Config, step_index: int,
     ).fetchall()
     for r in rows:
         n1, x1 = r["prev_sessions"], r["sessions_reached"]
-        # "rest" = same dimension, all other values
         dim_tot = con.execute(
             "SELECT SUM(prev_sessions), SUM(sessions_reached) FROM funnel_segments WHERE dimension = ? AND step_index = ?",
             (r["dimension"], step_index)).fetchone()
@@ -72,7 +71,6 @@ def segment_findings(con: sqlite3.Connection, cfg: Config, step_index: int,
         ))
     findings.sort(key=lambda f: (-f.lost_sessions, f.p_value, f.dimension, f.value))
     return findings[:limit]
-
 
 def detect_anomalies(con: sqlite3.Connection, cfg: Config) -> list[dict[str, Any]]:
     """Flag days whose step conversion is significantly AND materially below

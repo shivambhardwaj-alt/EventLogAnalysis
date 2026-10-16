@@ -5,8 +5,7 @@ import sqlite3
 from typing import Any
 
 from .config import Config
-from .db import scalar, sql_blocks
-
+from .db import read_sql, scalar, split_statements, sql_blocks
 
 def run_checks(con: sqlite3.Connection, cfg: Config) -> list[dict[str, Any]]:
     params = {"gap_seconds": cfg.inactivity_gap_seconds, "min_epoch": cfg.min_epoch}
@@ -19,7 +18,7 @@ def run_checks(con: sqlite3.Connection, cfg: Config) -> list[dict[str, Any]]:
 
 
 def profile(con: sqlite3.Connection) -> dict[str, int]:
-    sql = sql_blocks("09_quality_profile.sql")["type_coercions"]
+    sql = read_sql("09_quality_profile.sql")
     row = con.execute(sql).fetchone()
     return {k: int(row[k] or 0) for k in row.keys()}
 
