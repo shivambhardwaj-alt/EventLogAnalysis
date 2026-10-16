@@ -34,13 +34,13 @@ def load_dotenv(path: str | Path | None = None, override: bool = False) -> list[
             loaded.append(key)
     return loaded
 
-
+# it will show the secret like 123...abc or greater or less than 12 ***
 def mask(secret: str | None) -> str:
     if not secret:
         return "<not set>"
     return f"{secret[:4]}...{secret[-4:]}" if len(secret) > 12 else "****"
 
-
+# for the logging here 
 def setup_logging(level: str | int = "INFO") -> None:
     if isinstance(level, str):
         level = getattr(logging, level.upper(), logging.INFO)
