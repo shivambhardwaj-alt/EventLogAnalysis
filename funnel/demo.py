@@ -1,10 +1,4 @@
-"""Failure / edge-case demonstration.
 
-Runs the real pipeline in a throw-away workspace on hand-crafted bad input and
-prints what happened to every single line, then shows incremental loading,
-idempotent reruns, a late event merging two sessions, an empty file, a broken
-CSV, an unreachable AI provider, a hallucinating AI provider and a bad config.
-"""
 from __future__ import annotations
 
 import json
@@ -100,7 +94,7 @@ def run_demo() -> int:
                           output_dir=root / "out", min_sample_size=1)
         offline = ExplanationService(RuleBasedExplainer())
 
-        # ---------------------------------------------------------- 1. bad rows
+        
         _h("1) Every kind of bad / messy row -> what the pipeline did with it")
         (incoming / "01_edge_cases.jsonl").write_text("\n".join(l for _, l in CASES) + "\n\n", encoding="utf-8")
         s = run_pipeline(cfg, service=offline, write_report=False)
@@ -110,7 +104,7 @@ def run_demo() -> int:
               f"{s.exact_duplicates} exact + {s.conflicting_duplicates} conflicting duplicates. "
               f"Blank line skipped. Nothing crashed, nothing silently dropped.")
 
-        # ------------------------------------------------------- 2. idempotency
+        
         _h("2) Run again with no new files (idempotent)")
         s = run_pipeline(cfg, service=offline, write_report=False)
         print(f"  status={s.status}; skipped already-loaded files: {s.ingest.skipped_already_loaded}; "
@@ -119,7 +113,7 @@ def run_demo() -> int:
         s = run_pipeline(cfg, service=offline, write_report=False)
         print(f"  renamed copy of the same file -> skipped by content hash: {s.ingest.skipped_already_loaded}")
 
-        # --------------------------------------------- 3. incremental + late data
+        
         _h("3) Incremental load: a late event merges two sessions")
         (incoming / "02_day1.jsonl").write_text("\n".join([
             _ev("L1", "app_open", "2026-03-03T09:00:00Z", user="u_late"),
@@ -137,7 +131,7 @@ def run_demo() -> int:
         for r in _sessions(cfg.warehouse_path):
             print(f"    {r[0]:<28} {r[1]} -> {r[2]}  events={r[3]}")
 
-        # ----------------------------------------------- 4. empty + broken files
+        
         _h("4) Empty file, broken CSV header, unsupported file type")
         (incoming / "04_empty.jsonl").write_text("", encoding="utf-8")
         (incoming / "05_bad_header.csv").write_text("id,who,when\n1,2,3\n", encoding="utf-8")
@@ -147,7 +141,6 @@ def run_demo() -> int:
         print(f"  rejected / unsupported (left in place, retried after a fix): {s.ingest.unsupported_files}")
         print(f"  pipeline status: {s.status}")
 
-        # ------------------------------------------------------------ 5. AI down
         _h("5) AI provider unreachable -> automatic fallback, pipeline still succeeds")
         dead = ExplanationService(OllamaExplainer(base_url="http://127.0.0.1:9", model="llama3.2", timeout=2))
         s = run_pipeline(cfg, service=dead, write_report=False)
@@ -156,7 +149,7 @@ def run_demo() -> int:
         for w in e.warnings:
             print(f"  warning: {w}")
 
-        # ----------------------------------------------------- 6. hallucination
+      
         _h("6) AI invents a number -> rejected by guardrails")
 
         class Hallucinating:
@@ -171,7 +164,7 @@ def run_demo() -> int:
         for w in s.explanation.warnings:
             print("  " + textwrap.shorten(w, 150))
 
-        # ----------------------------------------------------------- 7. config
+       
         _h("7) Invalid configuration is rejected before touching any data")
         try:
             cfg.replace(inactivity_gap_seconds=0, funnel_steps=("view_product", "teleport"))

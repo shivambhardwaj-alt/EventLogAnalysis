@@ -72,7 +72,7 @@ class TestValidation(PipelineTestCase):
         got = sorted(r["reason"] for r in self.q("SELECT reason FROM quarantine_events"))
         self.assertEqual(got, sorted(bad))
         self.assertEqual(s.rows_accepted, 1)
-        # the original payload is preserved for debugging / replay
+        
         self.assertEqual(self.one("SELECT raw_payload FROM quarantine_events WHERE reason='malformed_json'"),
                          bad["malformed_json"])
 
@@ -95,5 +95,5 @@ class TestValidation(PipelineTestCase):
         r = self.q("SELECT * FROM clean_events")[0]
         self.assertEqual((r["event_name"], r["device"], r["country"], r["channel"]),
                          ("add_to_cart", "mobile", "GB", "unknown"))
-        self.assertEqual(r["product_id"], "77")       # int -> text
-        self.assertIsNone(r["price"])                 # negative price is invalid -> NULL, row kept
+        self.assertEqual(r["product_id"], "77")       
+        self.assertIsNone(r["price"])                 

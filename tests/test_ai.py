@@ -90,7 +90,7 @@ class TestService(unittest.TestCase):
 class _Handler(BaseHTTPRequestHandler):
     received: list = []
 
-    def do_POST(self):  # noqa: N802
+    def do_POST(self):  
         body = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
         _Handler.received.append((self.path, dict(self.headers), body))
         if self.path.endswith("/chat/completions"):

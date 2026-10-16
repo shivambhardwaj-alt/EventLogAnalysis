@@ -1,25 +1,5 @@
-"""Synthetic event-log generator (seeded, reproducible, no real user data).
 
-It simulates realistic shopping sessions and then deliberately damages the
-data the way real pipelines see it:
-  * client retries          -> exact duplicates (same batch and next batch)
-  * double clicks           -> near-duplicates within ~1s
-  * producer bugs           -> same event_id with different content
-  * late / offline uploads  -> events arriving in the next day's file
-  * out-of-order lines, mixed timestamp formats (ISO Z, +05:30 offsets,
-    epoch millis as number and as string), messy event names, prices as
-    strings, device aliases, lower-case / missing countries
-  * invalid rows: malformed JSON, non-object JSON, missing ids, bad / future /
-    ancient timestamps, unknown event types, a broken CSV row
-It also plants two realistic incidents:
-  * a release regression: app version 2.4.0 ships on day 5 (by default) and
-    breaks the payment step for everyone who upgrades (mobile + tablet apps);
-  * schema drift: on the last day a producer starts sending undeclared fields.
-The exact counts of everything injected go to a ground-truth file, so tests
-can prove the pipeline finds precisely what was planted.
-"""
 from __future__ import annotations
-
 import copy
 import csv
 import json
@@ -35,17 +15,17 @@ from typing import Any
 log = logging.getLogger(__name__)
 
 FUNNEL = ["view_product", "add_to_cart", "begin_checkout", "add_payment_info", "purchase"]
-# probability of continuing to FUNNEL[i] from FUNNEL[i-1]
+
 TRANSITIONS: dict[int, dict[str, float]] = {
     1: {"default": 0.76},
     2: {"default": 0.80},
-    3: {"2.4.0": 0.12, "default": 0.85},   # <- planted bug: payment step broken in app release 2.4.0
+    3: {"2.4.0": 0.12, "default": 0.85},  
     4: {"default": 0.85},
 }
 BUGGY_VERSION, OLD_VERSION, WEB_VERSION = "2.4.0", "2.3.1", "web"
-UPGRADE_SHARE = 0.9          # share of app users who install the new release once it ships
-DRIFT_FIELDS = {"experiment_id": "exp_checkout_v2"}   # a producer adds an undeclared field...
-DRIFT_PROPERTY = ("coupon_code", "SAVE10")            # ...and an undeclared property
+UPGRADE_SHARE = 0.9          
+DRIFT_FIELDS = {"experiment_id": "exp_checkout_v2"}   
+DRIFT_PROPERTY = ("coupon_code", "SAVE10")            
 DEVICES = [("mobile", 0.55), ("desktop", 0.35), ("tablet", 0.10)]
 CHANNELS = [("organic", 0.40), ("paid_search", 0.25), ("social", 0.20), ("email", 0.10), ("referral", 0.05)]
 COUNTRIES = [("IN", 0.45), ("US", 0.20), ("GB", 0.10), ("DE", 0.10), ("BR", 0.08), ("JP", 0.07)]
@@ -66,8 +46,8 @@ class GeneratorSettings:
     users: int = 5000
     days: int = 7
     seed: int = 42
-    release_day: int | None = None  # day the buggy app release ships (default: days - 2)
-    start: datetime | None = None   # UTC midnight of day 1; default = `days` days before today
+    release_day: int | None = None  
+    start: datetime | None = None   
     inject_issues: bool = True
     csv_partner_share: float = 0.03
 
@@ -112,14 +92,14 @@ class _Sim:
 
         def advance(mean: float = 45.0) -> None:
             nonlocal t
-            if rng.random() < 0.06:                       # long-but-legal idle inside a session
+            if rng.random() < 0.06:                       
                 t += rng.uniform(15 * 60, 29 * 60)
             else:
                 t += min(3.0 + rng.expovariate(1 / mean), 25 * 60)
 
         if rng.random() < 0.5:
             advance(); evs.append(self._event(user, "search", t))
-        if rng.random() < 0.15:                           # browse-only session
+        if rng.random() < 0.15:                         
             advance(); evs.append(self._event(user, "page_view", t))
         else:
             product = None
@@ -149,7 +129,7 @@ class _Sim:
             starts = sorted(rng.uniform(self.start, window_end) for _ in range(rng.choice([1, 1, 1, 2, 2, 3, 4])))
             last_end = -1e18
             for st in starts:
-                if st < last_end + 45 * 60:               # keep real sessions clearly apart
+                if st < last_end + 45 * 60:             
                     st = last_end + rng.uniform(45 * 60, 3 * 3600)
                 if st > window_end:
                     break
@@ -169,13 +149,13 @@ def _format_variants(rng: random.Random, e: dict) -> dict:
     """Valid-but-messy representations. The pipeline must normalise all of these."""
     r = rng.random()
     if r < 0.06:
-        e["ts"] = int(round(e["ts"] * 1000))                    # epoch millis (number)
+        e["ts"] = int(round(e["ts"] * 1000))                    
     elif r < 0.07:
-        e["ts"] = str(int(round(e["ts"] * 1000)))               # epoch millis (string)
+        e["ts"] = str(int(round(e["ts"] * 1000)))               
     elif r < 0.10:
-        e["ts"] = _iso(e["ts"], 330)                            # local time with +05:30
+        e["ts"] = _iso(e["ts"], 330)                            
     else:
-        e["ts"] = _iso(e["ts"])                                 # ISO-8601 Z
+        e["ts"] = _iso(e["ts"])                                
     if rng.random() < 0.04 and e["event_name"] in MESSY_NAMES:
         e["event_name"] = rng.choice(MESSY_NAMES[e["event_name"]])
     if rng.random() < 0.05 and "price" in e["properties"]:
@@ -195,7 +175,7 @@ def _format_variants(rng: random.Random, e: dict) -> dict:
     return e
 
 
-_CORRUPTIONS = [  # (reason the pipeline must assign, probability)
+_CORRUPTIONS = [  
     ("missing_user_id", 0.004),
     ("invalid_timestamp", 0.003),
     ("timestamp_in_future", 0.002),
@@ -244,7 +224,7 @@ def generate(out_dir: Path, settings: GeneratorSettings | None = None, now: floa
 
     protected: set[int] = set()
     if s.inject_issues:
-        # 1) double clicks -> near duplicates
+       
         extra = []
         for e in events:
             if e["event_name"] in ("add_to_cart", "view_product") and rng.random() < 0.02:
@@ -276,7 +256,7 @@ def generate(out_dir: Path, settings: GeneratorSettings | None = None, now: floa
         batch = e.pop("_batch")
         is_protected = id(e) in protected
         _format_variants(rng, e)
-        if s.inject_issues and batch == s.days - 1 and s.days > 1:   # schema drift on the last day
+        if s.inject_issues and batch == s.days - 1 and s.days > 1:  
             if rng.random() < 0.4:
                 e.update(DRIFT_FIELDS)
             if e["event_name"] == "add_payment_info" and rng.random() < 0.5:
@@ -286,24 +266,24 @@ def generate(out_dir: Path, settings: GeneratorSettings | None = None, now: floa
             lines[batch].append(line)
             continue
         r = rng.random()
-        if r < 0.025:                                      # client retry -> exact duplicate
+        if r < 0.025:                                      
             lines[batch].append(line)
             target = batch + 1 if (rng.random() < 0.4 and batch + 1 < s.days) else batch
             lines[target].append(line)
             truth["exact_duplicates"] += 1
             truth["cross_batch_duplicates"] += int(target != batch)
-        elif r < 0.026 and not is_protected:               # producer bug -> conflicting duplicate
+        elif r < 0.026 and not is_protected:               
             lines[batch].append(line)
             bad = copy.deepcopy(e)
             bad["ts"] = _iso(_to_epoch(e["ts"]) + rng.uniform(30, 300))
             lines[batch].append(json.dumps(bad))
             truth["conflicting_duplicates"] += 1
-        elif r < 0.066 and batch + 1 < s.days:             # offline upload -> arrives a day late
+        elif r < 0.066 and batch + 1 < s.days:           
             lines[batch + 1].append(line)
             truth["late_arrivals"] += 1
         elif (r < 0.066 + s.csv_partner_share and batch == 0 and not is_protected
               and e["device"] == "desktop"):
-            csv_rows.append(e)                             # same event, legacy CSV source
+            csv_rows.append(e)                            
             truth["csv_rows"] += 1
         else:
             lines[batch].append(line)
@@ -311,9 +291,9 @@ def generate(out_dir: Path, settings: GeneratorSettings | None = None, now: floa
     out_dir.mkdir(parents=True, exist_ok=True)
     written = []
     for b, blines in lines.items():
-        rng.shuffle(blines)                                # out-of-order arrival
+        rng.shuffle(blines)                                
         if s.inject_issues and blines:
-            blines.insert(rng.randrange(len(blines)), "")  # stray blank lines
+            blines.insert(rng.randrange(len(blines)), "")  
             truth["blank_lines"] += 1
         path = out_dir / f"events_day_{b + 1:02d}.jsonl"
         path.write_text("\n".join(blines) + "\n", encoding="utf-8")
@@ -331,7 +311,7 @@ def generate(out_dir: Path, settings: GeneratorSettings | None = None, now: floa
                             e["country"] or "", e["channel"] or "", e.get("app_version") or "",
                             p.get("product_id", ""), p.get("price", "")])
                 if i == len(csv_rows) // 2:
-                    w.writerow(["broken", "row", "with", "too", "few"])        # wrong column count
+                    w.writerow(["broken", "row", "with", "too", "few"])        
                     truth["quarantine:csv_column_count_mismatch"] += 1
         written.append(path.name)
 

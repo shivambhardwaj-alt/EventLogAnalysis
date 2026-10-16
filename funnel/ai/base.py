@@ -1,11 +1,4 @@
-"""The AI boundary.
 
-Everything the rest of the pipeline knows about AI is in this file:
-  * DropContext  - the ONLY data a model ever sees (aggregates, no raw events,
-                   no user ids => no PII leaves the machine)
-  * Explainer    - the interface every provider implements
-  * Explanation  - what comes back, including provenance and guardrail result
-"""
 from __future__ import annotations
 
 import hashlib
@@ -24,10 +17,10 @@ class SegmentFinding:
     value: str
     sessions_prev: int
     sessions_reached: int
-    conversion: float          # this segment's step conversion (0-1)
-    rest_conversion: float     # conversion of every other segment of the same dimension
-    lost_sessions: int         # sessions lost vs. performing like the rest
-    p_value: float             # two-proportion z-test, segment vs. rest
+    conversion: float         
+    rest_conversion: float     
+    lost_sessions: int         
+    p_value: float             
 
 
 @dataclass(frozen=True)

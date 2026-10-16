@@ -1,19 +1,4 @@
-"""ONE command that demonstrates the whole project from a clean state.
 
-    python run_all.py            # everything, then prints how to open the dashboard
-    python run_all.py --serve    # ...and starts the live dashboard at the end
-    python run_all.py --quick    # smaller data set (faster)
-
-What it does - exactly what a real daily pipeline would see:
-  1. wipes previous outputs (raw input folders included)
-  2. generates 7 days of messy synthetic event logs into data/landing/
-     (a buggy app release ships on day 5; a producer adds undeclared fields on day 7)
-  3. delivers ONE file per "day" into data/incoming/ and runs the pipeline after each,
-     so you can watch incremental loading, late events, the anomaly being detected
-     on the day it starts, and the schema-drift alert on day 7
-  4. runs the pipeline again with nothing new (proves idempotency)
-  5. runs the test suite and the failure / edge-case demonstration
-"""
 from __future__ import annotations
 
 import argparse
@@ -24,17 +9,17 @@ import time
 from pathlib import Path
 
 if sys.version_info < (3, 11):
-    sys.exit(f"Python 3.11 or newer is required (you have {sys.version.split()[0]}). Get it from https://www.python.org/downloads/")
+    sys.exit(f"Python 3.11 or newer is required (you have {sys.version.split()[0]})")
 
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 
-from funnel.ai import build_service  # noqa: E402
-from funnel.alerts import default_notifiers  # noqa: E402
-from funnel.config import Config  # noqa: E402
-from funnel.env import load_dotenv, setup_logging  # noqa: E402
-from funnel.generator import GeneratorSettings, generate  # noqa: E402
-from funnel.pipeline import run_pipeline  # noqa: E402
+from funnel.ai import build_service  
+from funnel.alerts import default_notifiers  
+from funnel.config import Config  
+from funnel.env import load_dotenv, setup_logging  
+from funnel.generator import GeneratorSettings, generate  
+from funnel.pipeline import run_pipeline  
 
 
 def banner(text: str) -> None:
@@ -50,7 +35,7 @@ def main() -> int:
     ap.add_argument("--no-demo", action="store_true")
     args = ap.parse_args()
 
-    setup_logging("WARNING")          # keep the console readable; the pipeline itself logs at INFO
+    setup_logging("WARNING")          
     loaded = load_dotenv(ROOT / ".env")
     cfg = Config.load()
     landing = ROOT / "data" / "landing"
@@ -139,7 +124,7 @@ def main() -> int:
         from funnel.server import serve
         serve(cfg, port=args.port)
     else:
-        print(f"  Dashboard : python -m funnel serve      then open http://127.0.0.1:{args.port}")
+        print(f"  Dashboard : python -m funnel serve then open http://127.0.0.1:{args.port}")
     return rc
 
 

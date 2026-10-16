@@ -1,5 +1,4 @@
-"""Data-quality report: what came in, what was rejected and why, what was
-fixed, and whether the stored data satisfies its invariants."""
+
 from __future__ import annotations
 
 import sqlite3
@@ -52,8 +51,7 @@ def report(con: sqlite3.Connection, cfg: Config) -> dict[str, Any]:
         samples[r["reason"]] = row["raw_payload"][:160]
     files = [dict(r) for r in con.execute(
         "SELECT file_name, file_format, line_count, blank_lines, run_id, ingested_at FROM ingest_files ORDER BY ingested_at, file_name")]
-    # Late arrival = event older than the newest event already delivered by an
-    # earlier file (i.e. it would have been missed by a naive "since last max ts" load).
+   
     late = scalar(con, """
         WITH per_file AS (
             SELECT r.file_hash, MIN(r.raw_id) AS first_raw, MAX(c.ts_epoch) AS max_ts

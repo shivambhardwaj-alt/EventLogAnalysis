@@ -1,13 +1,4 @@
-"""Model providers, using only the standard library HTTP client.
 
-* OpenAICompatibleExplainer - any /chat/completions API. Used for Groq (free
-  tier, default hosted choice), and also works with OpenRouter, Together,
-  LM Studio, vLLM or OpenAI itself by changing base URL + model.
-* OllamaExplainer           - fully local, free models (llama3.2, qwen2.5 ...).
-
-API keys are held in a private attribute, excluded from repr(), and never put
-into exception messages.
-"""
 from __future__ import annotations
 
 import json
@@ -63,7 +54,7 @@ class OpenAICompatibleExplainer:
         self.max_tokens = max_tokens
         self.retries = retries
 
-    def __repr__(self) -> str:  # never leak the key
+    def __repr__(self) -> str:  
         return f"OpenAICompatibleExplainer(name={self.name!r}, base_url={self.base_url!r}, model={self.model!r})"
 
     def explain(self, ctx: DropContext) -> str:

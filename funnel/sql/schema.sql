@@ -1,14 +1,4 @@
--- =====================================================================
--- Warehouse schema (SQLite).  Layered like a small lakehouse:
---   BRONZE  ingest_files, raw_events          (append-only, as received)
---   SILVER  stg_events, quarantine_events,    (typed + validated)
---           duplicate_events, clean_events
---   GOLD    sessions, funnel_session_steps,   (business models)
---           funnel_metrics, funnel_segments
---   OPS     pipeline_runs, pipeline_state, ai_explanations
--- Every statement is idempotent (IF NOT EXISTS) so the schema can be
--- applied on every run.
--- =====================================================================
+
 
 CREATE TABLE IF NOT EXISTS pipeline_runs (
     run_id                  TEXT PRIMARY KEY,
@@ -27,15 +17,15 @@ CREATE TABLE IF NOT EXISTS pipeline_runs (
     error                   TEXT
 );
 
--- Key/value state, e.g. the fingerprint of the config that built the data.
+
 CREATE TABLE IF NOT EXISTS pipeline_state (
     key   TEXT PRIMARY KEY,
     value TEXT NOT NULL
 );
 
--- ---------------------------------------------------------------- BRONZE
+
 CREATE TABLE IF NOT EXISTS ingest_files (
-    file_hash    TEXT PRIMARY KEY,              -- sha256 of file bytes => idempotent ingestion
+    file_hash    TEXT PRIMARY KEY,              
     file_name    TEXT NOT NULL,
     file_format  TEXT NOT NULL CHECK (file_format IN ('jsonl', 'csv')),
     line_count   INTEGER NOT NULL,
@@ -45,16 +35,16 @@ CREATE TABLE IF NOT EXISTS ingest_files (
 );
 
 CREATE TABLE IF NOT EXISTS raw_events (
-    raw_id             INTEGER PRIMARY KEY,     -- arrival order, used as tie-breaker everywhere
+    raw_id             INTEGER PRIMARY KEY,     
     run_id             TEXT NOT NULL,
     file_hash          TEXT NOT NULL REFERENCES ingest_files (file_hash),
     line_no            INTEGER NOT NULL,
-    raw_payload        TEXT NOT NULL,           -- exactly what we received (JSON text)
+    raw_payload        TEXT NOT NULL,           
     ingested_at_epoch  REAL NOT NULL,
     UNIQUE (file_hash, line_no)
 );
 
--- ------------------------------------------------------------ REFERENCE
+
 CREATE TABLE IF NOT EXISTS dim_event_types (
     event_name TEXT PRIMARY KEY
 );
@@ -64,8 +54,7 @@ CREATE TABLE IF NOT EXISTS dim_funnel_steps (
     step_name  TEXT NOT NULL UNIQUE
 );
 
--- ---------------------------------------------------------------- SILVER
--- One row per raw row: typed/normalised values + reject_reason (NULL = valid).
+
 CREATE TABLE IF NOT EXISTS stg_events (
     raw_id         INTEGER PRIMARY KEY REFERENCES raw_events (raw_id),
     run_id         TEXT NOT NULL,
@@ -99,7 +88,7 @@ CREATE TABLE IF NOT EXISTS duplicate_events (
 );
 
 CREATE TABLE IF NOT EXISTS clean_events (
-    event_id           TEXT PRIMARY KEY,        -- dedup guarantee enforced by the database
+    event_id           TEXT PRIMARY KEY,        
     raw_id             INTEGER NOT NULL UNIQUE REFERENCES raw_events (raw_id),
     run_id             TEXT NOT NULL,
     user_id            TEXT NOT NULL,
@@ -118,7 +107,7 @@ CREATE TABLE IF NOT EXISTS clean_events (
 CREATE INDEX IF NOT EXISTS ix_clean_user_ts ON clean_events (user_id, ts_epoch);
 CREATE INDEX IF NOT EXISTS ix_clean_session ON clean_events (session_id, event_name, ts_epoch);
 
--- ------------------------------------------------------------------ GOLD
+
 CREATE TABLE IF NOT EXISTS sessions (
     session_id        TEXT PRIMARY KEY,
     user_id           TEXT NOT NULL,
@@ -173,7 +162,7 @@ CREATE TABLE IF NOT EXISTS funnel_segments (
     PRIMARY KEY (dimension, segment_value, step_index)
 );
 
--- Funnel per calendar day (UTC, by session start) - feeds trend charts + anomaly detection.
+
 CREATE TABLE IF NOT EXISTS daily_funnel (
     session_date      TEXT NOT NULL,
     step_index        INTEGER NOT NULL,
@@ -197,7 +186,7 @@ CREATE TABLE IF NOT EXISTS funnel_anomalies (
     PRIMARY KEY (session_date, step_index)
 );
 
--- Fields seen in raw payloads that are not part of the agreed contract.
+
 CREATE TABLE IF NOT EXISTS schema_drift (
     field             TEXT PRIMARY KEY,
     rows              INTEGER NOT NULL,
@@ -206,7 +195,7 @@ CREATE TABLE IF NOT EXISTS schema_drift (
     example_value     TEXT
 );
 
--- ------------------------------------------------------------------- OPS
+
 CREATE TABLE IF NOT EXISTS task_runs (
     run_id         TEXT NOT NULL,
     seq            INTEGER NOT NULL,
@@ -218,7 +207,7 @@ CREATE TABLE IF NOT EXISTS task_runs (
 );
 
 CREATE TABLE IF NOT EXISTS alerts (
-    alert_key   TEXT PRIMARY KEY,           -- same problem => same key => alerted once
+    alert_key   TEXT PRIMARY KEY,          
     run_id      TEXT NOT NULL,
     severity    TEXT NOT NULL CHECK (severity IN ('info', 'warning', 'critical')),
     kind        TEXT NOT NULL,
@@ -227,16 +216,14 @@ CREATE TABLE IF NOT EXISTS alerts (
     delivered   TEXT NOT NULL               -- comma list of channels it was sent to
 );
 
--- Right to be forgotten: only a hash is kept, so the id itself is gone.
+
 CREATE TABLE IF NOT EXISTS erased_users (
     user_hash   TEXT PRIMARY KEY,
     erased_at   TEXT NOT NULL,
     rows_removed INTEGER NOT NULL
 );
 
--- ------------------------------------------------------------------- AI
--- Cache keyed by a hash of the exact context sent to the model, so a rerun
--- on unchanged data never pays for (or changes) the explanation.
+
 CREATE TABLE IF NOT EXISTS ai_explanations (
     context_hash  TEXT NOT NULL,
     provider      TEXT NOT NULL,

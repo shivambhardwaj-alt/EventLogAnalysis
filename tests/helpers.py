@@ -1,4 +1,4 @@
-"""Shared test helpers: an isolated workspace per test + tiny event builders."""
+
 from __future__ import annotations
 
 import json
@@ -18,7 +18,7 @@ T0 = datetime(2026, 3, 2, 10, 0, 0, tzinfo=timezone.utc)
 
 
 def ts(seconds: float = 0) -> str:
-    """ISO timestamp T0 + seconds."""
+    
     return (T0 + timedelta(seconds=seconds)).isoformat(timespec="milliseconds").replace("+00:00", "Z")
 
 
@@ -34,7 +34,7 @@ def ev(event_id: str, name: str, at: float | str | int, user: str = "u1", **kw: 
 
 
 class PipelineTestCase(unittest.TestCase):
-    """Each test gets its own folder, warehouse and offline explainer."""
+    
 
     def setUp(self) -> None:
         self.tmp = Path(tempfile.mkdtemp(prefix="funnel_test_"))
@@ -48,7 +48,7 @@ class PipelineTestCase(unittest.TestCase):
     def tearDown(self) -> None:
         shutil.rmtree(self.tmp, ignore_errors=True)
 
-    # -- input
+  
     def write(self, events: list[dict | str], name: str | None = None) -> Path:
         self._n += 1
         path = self.incoming / (name or f"batch_{self._n:03d}.jsonl")
@@ -61,7 +61,7 @@ class PipelineTestCase(unittest.TestCase):
         kw.setdefault("notifiers", [])
         return run_pipeline(cfg or self.cfg, **kw)
 
-    # -- output
+ 
     def q(self, sql: str, params: tuple = ()) -> list[sqlite3.Row]:
         con = sqlite3.connect(self.cfg.warehouse_path)
         con.row_factory = sqlite3.Row

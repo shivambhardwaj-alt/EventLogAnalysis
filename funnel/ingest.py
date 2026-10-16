@@ -1,13 +1,3 @@
-"""Bronze layer: land files exactly as received, once.
-
-* Files are identified by the SHA-256 of their bytes, so re-running on the same
-  folder is a no-op, a renamed copy is not double-loaded, and a file whose
-  content changed is loaded as new data.
-* Each file is loaded in its own transaction (file manifest + all lines), so a
-  crash never leaves a half-loaded file.
-* JSONL lines are stored verbatim; CSV rows are converted to the same JSON
-  shape (values stay strings - typing happens in SQL, one place for all sources).
-"""
 from __future__ import annotations
 
 import csv
@@ -59,8 +49,6 @@ def parse_jsonl(text: str) -> tuple[list[tuple[int, str]], int]:
 
 
 def parse_csv(text: str) -> tuple[list[tuple[int, str]], int]:
-    """CSV -> canonical JSON payload. Structural problems are recorded in the
-    payload (`__parse_error__`) so SQL quarantines them with a precise reason."""
     rows, blanks = [], 0
     reader = csv.reader(io.StringIO(text))
     header: list[str] | None = None
@@ -107,8 +95,6 @@ def ingest_new_files(con: sqlite3.Connection, incoming_dir: Path, run_id: str) -
         try:
             rows, blanks = parse_csv(text) if fmt == "csv" else parse_jsonl(text)
         except ValueError as exc:
-            # A structurally unusable file is rejected whole and NOT recorded,
-            # so it is retried after someone fixes it.
             log.error("cannot parse %s: %s", path.name, exc)
             result.unsupported_files.append(f"{path.name} ({exc})")
             continue
@@ -125,7 +111,6 @@ def ingest_new_files(con: sqlite3.Connection, incoming_dir: Path, run_id: str) -
                 "INSERT INTO raw_events (run_id, file_hash, line_no, raw_payload, ingested_at_epoch) VALUES (?, ?, ?, ?, ?)",
                 [(run_id, file_hash, line_no, payload, now) for line_no, payload in rows],
             )
-            # Right to be forgotten: users erased earlier must not come back with a late file.
             erased = con.execute("""
                 DELETE FROM raw_events
                 WHERE file_hash = ?

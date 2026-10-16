@@ -1,6 +1,4 @@
-"""Output guardrails: an explanation may only cite numbers that exist in the
-context it was given. This catches the most damaging LLM failure in analytics -
-a confident, plausible, made-up number - before it reaches a report."""
+
 from __future__ import annotations
 
 import re
@@ -9,11 +7,11 @@ from dataclasses import dataclass, field
 from .base import DropContext
 
 MAX_CHARS = 2500
-# 1,234 | 1234 | 12.5 | 12.5% | 0.0001
+
 _NUMBER_RE = re.compile(r"(?<![\w.])(\d{1,3}(?:,\d{3})+|\d+)(\.\d+)?\s*(%|percent\b)?", re.IGNORECASE)
 _STEP_NUMBER_RE = re.compile(r"(?i)\bstep\s+\d+\b")
 _DATE_RE = re.compile(r"\b\d{4}-\d{2}-\d{2}\b")
-SMALL_INT_FREE = 10  # list markers, "two segments", "step 3" ... are always fine
+SMALL_INT_FREE = 10  
 
 
 @dataclass
@@ -80,8 +78,7 @@ def validate(text: str, ctx: DropContext) -> GuardrailResult:
 
     counts, pcts, decimals = _allowed_values(ctx)
     scrubbed = _STEP_NUMBER_RE.sub(" ", text)
-    # dates and segment labels (e.g. app_version "2.4.0") are identifiers, not measurements:
-    # a date is fine if it occurs in the context, otherwise it is an invented date.
+    
     known_dates = {t.date for t in ctx.trend} | ({ctx.anomaly_started_on} if ctx.anomaly_started_on else set())
     for d in _DATE_RE.findall(scrubbed):
         if d not in known_dates:

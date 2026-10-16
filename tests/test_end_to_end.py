@@ -1,5 +1,4 @@
-"""End to end on generated data: the pipeline must find exactly what the
-generator planted, and incremental loading must equal a full rebuild."""
+
 import json
 from datetime import datetime, timezone
 
@@ -70,12 +69,12 @@ class TestEndToEnd(PipelineTestCase):
         raw_before = self.one("SELECT COUNT(*) FROM raw_events")
         s = self.run_pipeline()
         self.assertEqual(s.status, "no_new_data")
-        self.assertEqual(s.new_alerts, [])                       # same problems are not alerted twice
+        self.assertEqual(s.new_alerts, [])                       
         self.assertEqual(self.one("SELECT COUNT(*) FROM raw_events"), raw_before)
         self.assertEqual(self.snapshot(), before)
 
     def test_day_by_day_incremental_equals_full_rebuild(self):
-        # deliver one file per run, like a daily job, into a fresh warehouse
+       
         staged = self.tmp / "staged"
         staged.mkdir()
         for name in self.files:

@@ -1,22 +1,4 @@
-"""Live dashboard + read-only JSON API (standard library only).
 
-    python -m funnel serve            -> http://127.0.0.1:8050
-
-Endpoints (all GET, all read-only, all filters are bound SQL parameters):
-    /                         interactive dashboard
-    /report                   the static HTML report of the last run
-    /api/health               liveness + last run status
-    /api/dimensions           values available for each filter
-    /api/funnel?device=&channel=&country=&app_version=&date_from=&date_to=
-    /api/daily                daily conversion per step
-    /api/anomalies            flagged days
-    /api/segments?step=4      segment conversion for one step
-    /api/alerts               latest alerts
-    /api/quality              data-quality summary from the last run
-    /api/runs                 run history (+ task timings of the latest run)
-    /api/explanation          largest drop + explanation from the last run
-    /api/users/<user_id>      one user's sessions and events (support/debug view)
-"""
 from __future__ import annotations
 
 import json

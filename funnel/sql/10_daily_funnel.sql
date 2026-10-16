@@ -1,8 +1,4 @@
--- =====================================================================
--- STAGE 8: funnel per calendar day (UTC date of session start).
--- Rebuilt each run from funnel_session_steps (cheap, always consistent).
--- Feeds the trend chart and day-over-baseline anomaly detection.
--- =====================================================================
+
 
 DELETE FROM daily_funnel;
 

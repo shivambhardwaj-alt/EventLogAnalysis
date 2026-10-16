@@ -47,9 +47,9 @@ class TestAnomalyDetection(PipelineTestCase):
 
     def test_noise_and_small_samples_are_not_flagged(self):
         events = []
-        for d, rate in enumerate([0.70, 0.66, 0.73, 0.68, 0.71]):       # normal day-to-day noise
+        for d, rate in enumerate([0.70, 0.66, 0.73, 0.68, 0.71]):       
             events += day_sessions(d, 120, rate, "u")
-        events += day_sessions(5, 20, 0.10, "small")                        # terrible but tiny day
+        events += day_sessions(5, 20, 0.10, "small")                        
         self.write(events)
         cfg = self.cfg.replace(funnel_steps=("view_product", "add_to_cart"))
         self.assertEqual(self.run_pipeline(cfg).anomalies, [])

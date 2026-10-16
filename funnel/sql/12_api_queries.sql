@@ -1,10 +1,4 @@
--- =====================================================================
--- Read-only queries used by the dashboard API (python -m funnel serve).
--- Every filter is a bound parameter; NULL means "no filter".
--- =====================================================================
 
--- name: filtered_funnel
--- Params: :device, :channel, :country, :app_version, :date_from, :date_to
 WITH s AS (
     SELECT session_id
     FROM sessions
@@ -36,8 +30,7 @@ SELECT step_index, step_name, n AS sessions_reached, prev_n AS prev_sessions,
 FROM b
 ORDER BY step_index;
 
--- name: user_timeline
--- Params: :user_id
+
 SELECT c.session_id, c.event_ts, c.event_name, c.device, c.app_version, c.product_id, c.price,
        c.is_near_duplicate
 FROM clean_events AS c

@@ -1,11 +1,4 @@
--- =====================================================================
--- STAGE 9: schema drift (data-contract check).
--- Every field present in a raw payload but not in the agreed contract is
--- reported with how often it occurs and the first file that carried it.
--- Producers adding fields silently is one of the most common causes of
--- broken pipelines; this makes it visible the day it happens.
--- Params: :contract_fields, :contract_property_fields  (JSON arrays)
--- =====================================================================
+
 
 DELETE FROM schema_drift;
 

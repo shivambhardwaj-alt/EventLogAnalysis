@@ -1,8 +1,4 @@
-"""ExplanationService: primary provider -> guardrails -> fallback.
 
-The pipeline only ever calls `ExplanationService.explain(ctx)`. Whatever goes
-wrong inside (no key, timeout, 500, hallucinated numbers) the result is a valid,
-clearly-labelled Explanation and the pipeline carries on."""
 from __future__ import annotations
 
 import logging

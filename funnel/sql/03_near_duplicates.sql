@@ -1,12 +1,4 @@
--- =====================================================================
--- STAGE 3: near-duplicate detection (double clicks / double submits).
--- Same user + same event + same product within :near_dup_window_s seconds
--- of the previous identical action => flagged, kept for audit, but
--- excluded from sessions and funnels.
--- Recomputed for affected users only; a late event can change who is
--- "previous", so flags are reset first.
--- Params: :near_dup_window_s
--- =====================================================================
+
 
 UPDATE clean_events
 SET is_near_duplicate = 0

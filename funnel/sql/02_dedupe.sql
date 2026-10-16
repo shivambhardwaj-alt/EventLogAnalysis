@@ -1,13 +1,4 @@
--- =====================================================================
--- STAGE 2: exact de-duplication on event_id.
--- A duplicate can be inside this batch (client retry) or against events
--- already loaded by an earlier run (retry that arrived a day later).
--- Winner = earliest arrival (lowest raw_id) - deterministic on reruns.
---   kind = 'exact'       same id, same user/event/timestamp
---   kind = 'conflicting' same id but different content (a producer bug;
---                        counted separately so it can be alerted on)
--- Params: :run_id
--- =====================================================================
+
 
 INSERT INTO duplicate_events (raw_id, run_id, event_id, kind)
 WITH candidates AS (
@@ -50,8 +41,7 @@ WHERE s.reject_reason IS NULL
   AND NOT EXISTS (SELECT 1 FROM duplicate_events d WHERE d.raw_id = s.raw_id)
 ORDER BY s.raw_id;
 
--- Users whose history changed in this batch: only they need their
--- near-duplicate flags, sessions and funnel steps recomputed.
+
 DELETE FROM _affected_users;
 
 INSERT OR IGNORE INTO _affected_users (user_id)

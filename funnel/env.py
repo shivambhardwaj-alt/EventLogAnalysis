@@ -1,8 +1,4 @@
-"""Minimal .env loader (stdlib only) and logging setup.
 
-Secrets are only ever read from the process environment or a git-ignored .env
-file. They are never written to logs, reports, the database or exceptions.
-"""
 from __future__ import annotations
 
 import logging
@@ -14,8 +10,7 @@ from .config import PROJECT_ROOT
 
 
 def load_dotenv(path: str | Path | None = None, override: bool = False) -> list[str]:
-    """Load KEY=VALUE lines into os.environ. Returns the keys loaded (never values).
-    Existing environment variables win unless override=True."""
+    
     path = Path(path) if path else PROJECT_ROOT / ".env"
     if not path.exists():
         return []
@@ -41,7 +36,6 @@ def load_dotenv(path: str | Path | None = None, override: bool = False) -> list[
 
 
 def mask(secret: str | None) -> str:
-    """For diagnostics only: 'gsk_...9f2a' style, never the full value."""
     if not secret:
         return "<not set>"
     return f"{secret[:4]}...{secret[-4:]}" if len(secret) > 12 else "****"

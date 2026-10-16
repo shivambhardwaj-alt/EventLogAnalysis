@@ -1,13 +1,9 @@
-"""Deterministic, offline explainer.
 
-It is the default when no model is configured and the safety net when a model
-fails or its answer is rejected by the guardrails - so a report always has an
-explanation and the pipeline never depends on a network call."""
 from __future__ import annotations
 
 from .base import DropContext
 
-# Hypotheses keyed on words in the step that users fail to reach.
+
 _HYPOTHESES: list[tuple[tuple[str, ...], list[str]]] = [
     (("payment", "pay"), [
         "the payment form fails or is hard to complete on this segment (validation errors, layout, keyboard issues)",

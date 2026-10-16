@@ -1,14 +1,4 @@
--- =====================================================================
--- STAGE 4: sessionization with an inactivity gap.
--- A new session starts at a user's first event, or whenever the time
--- since that user's previous event is STRICTLY greater than :gap_seconds
--- (a gap of exactly 30:00 stays in the same session).
--- Events are ordered by event time, not arrival time, so out-of-order
--- and late-arriving events land in the right session.  Affected users are
--- fully recomputed: a late event can merge two sessions or split one.
--- session_id = user_id#<start epoch millis>  -> stable across reruns.
--- Params: :gap_seconds
--- =====================================================================
+
 
 DROP TABLE IF EXISTS temp._session_assign;
 

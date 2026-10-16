@@ -1,4 +1,4 @@
-"""Command line interface:  python -m funnel <command>"""
+
 from __future__ import annotations
 
 import argparse

@@ -44,7 +44,7 @@ class Config:
     lock_timeout_seconds: float = 7200
     extra: dict[str, Any] = field(default_factory=dict, compare=False)
 
-    # ------------------------------------------------------------ loading
+    
     @classmethod
     def load(cls, path: str | Path | None = None, root: Path | None = None, **overrides: Any) -> "Config":
         path = Path(path) if path else DEFAULT_CONFIG
@@ -89,7 +89,7 @@ class Config:
     def replace(self, **changes: Any) -> "Config":
         return dataclasses.replace(self, **changes).validated()
 
-    # --------------------------------------------------------- validation
+    
     def validated(self) -> "Config":
         errors: list[str] = []
         if self.inactivity_gap_seconds <= 0:
@@ -134,7 +134,7 @@ class Config:
             raise ConfigError("Invalid configuration:\n  - " + "\n  - ".join(errors))
         return self
 
-    # ------------------------------------------------------------ helpers
+  
     @property
     def min_epoch(self) -> float:
         dt = datetime.strptime(self.min_event_date, "%Y-%m-%d").replace(tzinfo=timezone.utc)

@@ -1,10 +1,4 @@
--- =====================================================================
--- STAGE 7: funnel per segment (device / channel / country ...).
--- {dimension} is substituted by Python from a strict allow-list of
--- column names (identifiers cannot be bound as SQL parameters); every
--- value is still passed as a bound parameter.
--- Params: :dimension
--- =====================================================================
+
 
 INSERT INTO funnel_segments (
     dimension, segment_value, step_index, step_name, sessions_reached, prev_sessions, step_conversion

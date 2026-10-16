@@ -1,4 +1,4 @@
-"""Duplicate handling and sessionization, including incremental edge cases."""
+
 from tests.helpers import PipelineTestCase, ev
 
 GAP = 30 * 60

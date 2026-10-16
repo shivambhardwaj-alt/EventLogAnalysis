@@ -1,19 +1,4 @@
-"""Orchestrator.
 
-    lock -> ingest -> validate -> dedupe -> near-dups -> sessionize -> funnel steps
-         -> aggregates (funnel, segments, daily) -> schema drift -> quality checks
-         -> anomaly detection -> largest drop + AI explanation -> alerts -> report
-
-Incremental by default:
-  * only files never seen before are ingested (content hash);
-  * only raw rows not yet processed are validated (a crashed run is simply
-    picked up by the next one - everything below runs in one transaction);
-  * only users with new events get their sessions/funnel rebuilt;
-  * cheap aggregates are rebuilt every time, so they are always consistent.
-Re-running with no new files changes nothing. A config or schema change that
-affects derived data triggers an automatic full refresh from the raw layer.
-Every task is timed and recorded in `task_runs` (observability / lineage).
-"""
 from __future__ import annotations
 
 import json

@@ -17,10 +17,10 @@ No libraries to install: only Python 3.11 or newer.
 
 ## How to run
 
-```bash
+
 python run_all.py         
 python -m funnel serve     
-```
+
 
 Then open **http://127.0.0.1:8050** in your browser.
 

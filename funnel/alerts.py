@@ -1,11 +1,4 @@
-"""Alerting: turn pipeline results into alerts, store them, deliver new ones.
 
-* Every alert has a stable key, so the same problem is alerted ONCE, not on
-  every rerun (an anomaly that started on 2026-10-09 keeps the same key).
-* Delivery channels: the log (always) and an optional webhook
-  (ALERT_WEBHOOK_URL in .env - Slack, Discord and Teams incoming webhooks all
-  accept the JSON body sent here). A delivery failure never fails the run.
-"""
 from __future__ import annotations
 
 import json
@@ -53,7 +46,7 @@ class WebhookNotifier:
         self._url = url
         self.timeout = timeout
 
-    def __repr__(self) -> str:  # the URL is a secret (it embeds a token)
+    def __repr__(self) -> str: 
         return "WebhookNotifier(url=<hidden>)"
 
     def send(self, alert: Alert) -> None:

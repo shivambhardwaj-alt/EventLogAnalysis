@@ -1,9 +1,4 @@
-"""SQLite connection handling and a tiny SQL-file runner.
 
-Why SQLite: it ships with Python, so the project runs from a clean machine with
-zero installs, yet it supports everything the pipeline needs - window functions,
-JSON functions, CTEs, UPDATE ... FROM and partial transactions.
-"""
 from __future__ import annotations
 
 import hashlib
@@ -17,7 +12,7 @@ from typing import Any, Iterator, Mapping
 log = logging.getLogger(__name__)
 
 SQL_DIR = Path(__file__).parent / "sql"
-MIN_SQLITE = (3, 35, 0)  # UPDATE ... FROM (3.33) and RETURNING-era JSON functions
+MIN_SQLITE = (3, 35, 0)  
 
 _BLOCK_RE = re.compile(r"^--\s*name:\s*(\w+)\s*$", re.MULTILINE)
 _IDENTIFIER_RE = re.compile(r"^[a-z_][a-z0-9_]*$")
@@ -36,17 +31,17 @@ def connect(path: str | Path) -> sqlite3.Connection:
         )
     if str(path) != ":memory:":
         Path(path).parent.mkdir(parents=True, exist_ok=True)
-    con = sqlite3.connect(str(path), isolation_level=None)  # explicit transactions only
+    con = sqlite3.connect(str(path), isolation_level=None)  
     con.row_factory = sqlite3.Row
     con.create_function("sha256", 1, _sha256, deterministic=True)
     con.execute("PRAGMA foreign_keys = ON")
-    con.execute("PRAGMA busy_timeout = 5000")   # readers (dashboard) and the writer can coexist
+    con.execute("PRAGMA busy_timeout = 5000")   
     if str(path) != ":memory:":
         con.execute("PRAGMA journal_mode = WAL")
         con.execute("PRAGMA synchronous = NORMAL")
     try:
         con.execute("SELECT json_valid('{}')").fetchone()
-    except sqlite3.OperationalError as exc:  # pragma: no cover - very old builds only
+    except sqlite3.OperationalError as exc:  
         raise DatabaseError("This SQLite build has no JSON support") from exc
     return con
 
@@ -56,7 +51,7 @@ def _sha256(value: Any) -> str | None:
 
 
 def user_hash(user_id: str) -> str:
-    return _sha256(user_id.strip())  # type: ignore[return-value]
+    return _sha256(user_id.strip())  
 
 
 @contextmanager
@@ -101,7 +96,6 @@ def sql_blocks(name: str) -> dict[str, str]:
     """Parse a file containing `-- name: xyz` blocks into {name: sql}."""
     text = read_sql(name)
     parts = _BLOCK_RE.split(text)
-    # parts = [preamble, name1, body1, name2, body2, ...]
     return {parts[i]: parts[i + 1].strip() for i in range(1, len(parts), 2)}
 
 
@@ -141,7 +135,7 @@ def _params_for(stmt: str, params: Mapping[str, Any]) -> dict[str, Any]:
     """Pass only the parameters a statement actually references."""
     names = set(re.findall(r":([A-Za-z_]\w*)", stmt))
     missing = names - set(params)
-    # ignore things like '%H:%M' inside strftime literals
+    
     missing = {m for m in missing if not re.search(rf"'[^']*:{m}[^']*'", stmt)}
     if missing:
         raise KeyError(f"SQL parameter(s) not provided: {sorted(missing)}")
@@ -149,7 +143,7 @@ def _params_for(stmt: str, params: Mapping[str, Any]) -> dict[str, Any]:
 
 
 SCHEMA_VERSION = "2"
-# The raw layer is never dropped: everything else can be rebuilt from it.
+
 RAW_TABLES = {"ingest_files", "raw_events", "pipeline_runs", "pipeline_state", "erased_users"}
 
 

@@ -1,8 +1,4 @@
--- =====================================================================
--- STAGE 6: funnel metrics (gold).  Cheap aggregate, so it is rebuilt
--- from funnel_session_steps on every run => always consistent.
--- Median time between steps is computed in SQL with ROW_NUMBER/COUNT.
--- =====================================================================
+
 
 DELETE FROM funnel_metrics;
 

@@ -1,9 +1,6 @@
--- =====================================================================
--- Data profile: how much cleaning/type-coercion was actually needed.
--- Computed from the raw payloads, so it is evidence, not a claim.
--- =====================================================================
 
--- name: type_coercions
+
+
 WITH j AS (
     SELECT r.raw_id, r.raw_payload AS p
     FROM raw_events r
